@@ -88,9 +88,9 @@ cmd/turbo/version.go: ../version.txt
 	mv cmd/turbo/version.go.txt cmd/turbo/version.go
 
 build: install
-	# cd $(CLI_DIR)/../packages/turbo-ignore && pnpm install --filter=turbo-ignore && npm run build
-	cd $(CLI_DIR)/../packages/create-turbo && pnpm install --filter=create-turbo && npm run build
-	cd $(CLI_DIR)/../packages/turbo-codemod && pnpm install --filter=@turbo/codemod && npm run build
+	# cd $(CLI_DIR)/../packages/turbo-ignore && pnpm install --filter=turbo-ignore && pnpm run build
+	cd $(CLI_DIR)/../packages/create-turbo && pnpm install --filter=create-turbo && pnpm run build
+	cd $(CLI_DIR)/../packages/turbo-codemod && pnpm install --filter=@turbo/codemod && pnpm run build
 
 .PHONY: prepublish
 prepublish: compile-protos cmd/turbo/version.go
@@ -144,7 +144,6 @@ stage-release: cmd/turbo/version.go
 	cat $(CLI_DIR)/../version.txt
 	git diff -- $(CLI_DIR)/../version.txt
 	git status
-	@test main = "`git rev-parse --abbrev-ref HEAD`" || (echo "Refusing to publish from non-main branch `git rev-parse --abbrev-ref HEAD`" && false)
 	@test "" = "`git cherry`" || (echo "Refusing to publish with unpushed commits" && false)
 
 	# Stop if versions are not updated.
@@ -152,10 +151,10 @@ stage-release: cmd/turbo/version.go
 	@test "" != "`git diff -- $(CLI_DIR)/cmd/turbo/version.go`" || (echo "Refusing to publish with unupdated version.go" && false)
 
 	# Prepare the packages.
-	cd $(CLI_DIR)/../packages/turbo && npm version "$(TURBO_VERSION)" --allow-same-version
-	# cd $(CLI_DIR)/../packages/turbo-ignore && npm version "$(TURBO_VERSION)" --allow-same-version
-	cd $(CLI_DIR)/../packages/create-turbo && npm version "$(TURBO_VERSION)" --allow-same-version
-	cd $(CLI_DIR)/../packages/turbo-codemod && npm version "$(TURBO_VERSION)" --allow-same-version
+	cd $(CLI_DIR)/../packages/turbo && pnpm version "$(TURBO_VERSION)" --allow-same-version
+	# cd $(CLI_DIR)/../packages/turbo-ignore && pnpm version "$(TURBO_VERSION)" --allow-same-version
+	cd $(CLI_DIR)/../packages/create-turbo && pnpm version "$(TURBO_VERSION)" --allow-same-version
+	cd $(CLI_DIR)/../packages/turbo-codemod && pnpm version "$(TURBO_VERSION)" --allow-same-version
 
 	git checkout -b staging-$(TURBO_VERSION)
 	git commit -anm "publish $(TURBO_VERSION) to registry"
@@ -176,11 +175,11 @@ publish: clean build
 	# Publishes the native npm modules.
 	goreleaser release --rm-dist -f combined-release.yml
 
-	# Split packing from the publish step so that npm locates the correct .npmrc file.
-	npm pack $(CLI_DIR)/../packages/turbo --pack-destination=$(CLI_DIR)/../
-	npm pack $(CLI_DIR)/../packages/turbo-ignore --pack-destination=$(CLI_DIR)/../
-	npm pack $(CLI_DIR)/../packages/create-turbo --pack-destination=$(CLI_DIR)/../
-	npm pack $(CLI_DIR)/../packages/turbo-codemod --pack-destination=$(CLI_DIR)/../
+	# Split packing from the publish step so that pnpm locates the correct .npmrc file.
+	pnpm pack $(CLI_DIR)/../packages/turbo --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/turbo-ignore --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/create-turbo --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/turbo-codemod --pack-destination=$(CLI_DIR)/../
 
 	# Publish the remaining JS packages in order to avoid race conditions.
 	cd $(CLI_DIR)/../
@@ -220,12 +219,12 @@ publish-turbo: clean build
 	npm config set --location=project "//registry.npmjs.org/:_authToken" $(NPM_TOKEN)
 
 	# Publishes the native npm modules.
-	goreleaser release --rm-dist -f combined-shim.yml
+	# goreleaser release --rm-dist -f combined-shim.yml
 
 	# Split packing from the publish step so that npm locates the correct .npmrc file.
-	npm pack $(CLI_DIR)/../packages/turbo --pack-destination=$(CLI_DIR)/../
-	npm pack $(CLI_DIR)/../packages/create-turbo --pack-destination=$(CLI_DIR)/../
-	npm pack $(CLI_DIR)/../packages/turbo-codemod --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/turbo --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/create-turbo --pack-destination=$(CLI_DIR)/../
+	pnpm pack $(CLI_DIR)/../packages/turbo-codemod --pack-destination=$(CLI_DIR)/../
 
 	# Publish the remaining JS packages in order to avoid race conditions.
 	cd $(CLI_DIR)/../
